@@ -140,27 +140,6 @@
       }
     }
   </style>
-
-<style id="tashihq-demo-style">
-#demoBanner{position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;background:#022c22;color:#fff;border:1px solid #d6a928;border-radius:16px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-family:Arial,sans-serif;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-#demoBanner strong{color:#f6d365}
-#demoBanner button{background:#f6d365;color:#022c22;border:0;border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer}
-</style>
-<script>
-window.addEventListener('DOMContentLoaded',()=>{
-  const b=document.createElement('div'); b.id='demoBanner';
-  b.innerHTML='<div><strong>MODE DEMO TASHIHQ PRO</strong><br>Silakan jelajahi fitur aplikasi menggunakan data contoh.</div><button type="button" onclick="resetDemoData()">Reset Demo</button>';
-  document.body.appendChild(b);
-});
-function resetDemoData(){
-  if(confirm('Kembalikan data demo ke kondisi awal? Data percobaan di browser ini akan dihapus.')){
-    const keys=['mushaf_students','mushaf_setoran_history','mushaf_active_student','mushaf_quran_cache'];
-    keys.forEach(k=>localStorage.removeItem(k));
-    indexedDB.deleteDatabase('TashihQOfflineDB');
-    location.reload();
-  }
-}
-</script>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col antialiased pb-20 md:pb-4">
 
@@ -5855,6 +5834,190 @@ _Pengampu Halaqah Tahfidz_`;
         });
       });
     }
+
+
+    /* ==============================================================
+       TASHIHQ PRO — MODE DEMO PENJUALAN
+       Pembatasan demo dibuat di sisi UI/JavaScript agar calon pembeli
+       dapat mencoba alur utama tanpa mendapatkan fitur produksi penuh.
+       ==============================================================
+    */
+    (function initSalesDemo(){
+      const DEMO_MAX_SESSIONS = 3;
+      const DEMO_MAX_MARKS = 8;
+      const DEMO_MAX_AYAT = 7;
+
+      function demoToast(msg){
+        if (typeof showToast === 'function') showToast('DEMO: ' + msg, 'amber');
+      }
+      function demoBlocked(feature){
+        demoToast(feature + ' tersedia di versi PRO penuh.');
+        return false;
+      }
+
+      // Tambahkan banner demo dan panel informasi pembatasan.
+      function addDemoUI(){
+        if (document.getElementById('salesDemoBanner')) return;
+        const style=document.createElement('style');
+        style.textContent=`
+          #salesDemoBanner{position:relative;z-index:45;background:linear-gradient(90deg,#78350f,#92400e,#78350f);color:#fff;padding:9px 14px;border-bottom:1px solid #f59e0b;box-shadow:0 3px 12px rgba(0,0,0,.16)}
+          #salesDemoBanner .demo-inner{max-width:1280px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px}
+          #salesDemoBanner strong{color:#fde68a}
+          #salesDemoBanner button{background:#fbbf24;color:#451a03;border:0;border-radius:10px;padding:5px 9px;font-weight:800;cursor:pointer}
+          .demo-locked{position:relative;opacity:.72!important;filter:saturate(.65)}
+          .demo-locked::after{content:'🔒 PRO';position:absolute;right:7px;top:6px;background:#451a03;color:#fde68a;border:1px solid #b45309;border-radius:7px;padding:2px 5px;font-size:9px;font-weight:900;z-index:20}
+          #demoInfoModal{position:fixed;inset:0;background:rgba(15,23,42,.65);backdrop-filter:blur(4px);z-index:9999;display:none;align-items:center;justify-content:center;padding:18px}
+          #demoInfoModal .box{max-width:520px;width:100%;background:#fff;border-radius:24px;box-shadow:0 25px 70px rgba(0,0,0,.3);overflow:hidden}
+          #demoInfoModal .head{background:#022c22;color:#fff;padding:18px 20px}
+          #demoInfoModal .body{padding:18px 20px;color:#334155;font-size:13px;line-height:1.7}
+          #demoInfoModal li{margin:6px 0}
+          #demoInfoModal .close{background:#fbbf24;color:#022c22;border:0;border-radius:12px;padding:9px 14px;font-weight:900;cursor:pointer}
+        `;
+        document.head.appendChild(style);
+        const banner=document.createElement('div');
+        banner.id='salesDemoBanner';
+        banner.innerHTML=`<div class="demo-inner"><div>✨ <strong>MODE DEMO TASHIHQ PRO</strong> — Silakan coba fitur utama aplikasi.</div><button type="button" onclick="window.openDemoInfo()">Lihat Batasan Demo</button></div>`;
+        const header=document.querySelector('header');
+        if(header) header.insertAdjacentElement('afterend',banner);
+        const modal=document.createElement('div');
+        modal.id='demoInfoModal';
+        modal.innerHTML=`<div class="box"><div class="head"><div style="font-size:11px;font-weight:800;color:#fcd34d">TASHIHQ PRO</div><div style="font-size:19px;font-weight:900;margin-top:2px">Demo Interaktif</div></div><div class="body"><p style="margin-top:0"><strong>Anda sedang mencoba versi demo.</strong> Fitur inti sengaja dibuka agar Anda dapat merasakan alur kerja TashihQ Pro.</p><ul><li>✓ Mushaf & koreksi per-kata dapat dicoba.</li><li>✓ Maksimal <strong>3 sesi</strong> dapat disimpan.</li><li>✓ Maksimal <strong>8 tanda koreksi</strong> dalam satu sesi.</li><li>✓ Demo dibatasi pada <strong>Surah Al-Fatihah, ayat 1–7</strong>.</li><li>✓ Data santri hanya data contoh.</li><li>🔒 Ekspor/impor, reset, pengelolaan roster, target penuh, WhatsApp, rapor, dan penyimpanan offline tersedia pada versi PRO penuh.</li><li>🔒 Fitur dan data lengkap 114 surah/6.236 ayat tersedia pada versi PRO penuh.</li></ul><div style="margin-top:15px;text-align:right"><button class="close" onclick="window.closeDemoInfo()">Mulai Mencoba</button></div></div></div>`;
+        document.body.appendChild(modal);
+      }
+      window.openDemoInfo=()=>{const m=document.getElementById('demoInfoModal');if(m)m.style.display='flex'};
+      window.closeDemoInfo=()=>{const m=document.getElementById('demoInfoModal');if(m)m.style.display='none'};
+
+      function markLocked(id){
+        const el=document.getElementById(id); if(!el)return;
+        el.classList.add('demo-locked');
+      }
+      function lockButtonsByText(){
+        const selectors='button';
+        document.querySelectorAll(selectors).forEach(b=>{
+          const t=(b.innerText||'').trim().toLowerCase();
+          const lockTerms=['rapor pdf','cetak rapor','kirim progres ke wa','tambah santri','+ baru','unduh 114 surah','hapus cache','unduh file backup','pilih & impor file json','reset semua data','atur target'];
+          if(lockTerms.some(x=>t.includes(x))){
+            b.classList.add('demo-locked');
+            b.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();demoBlocked(t.includes('rapor')?'Cetak rapor':t.includes('wa')?'Kirim WhatsApp':t.includes('santri')||t.includes('baru')?'Tambah/edit santri':t.includes('backup')||t.includes('impor')?'Backup & impor data':t.includes('offline')||t.includes('114')||t.includes('cache')?'Mushaf offline':'Pengaturan PRO');},true);
+          }
+        });
+      }
+
+      // Bungkus handler penting agar batasan tetap berlaku walau dipanggil dari onclick.
+      const originalFinish=window.finishSessionAndSave;
+      window.finishSessionAndSave=function(){
+        const used=Number(sessionStorage.getItem('tashihq_demo_sessions')||'0');
+        if(used>=DEMO_MAX_SESSIONS){ demoBlocked('Penyimpanan sesi demo'); return false; }
+        return originalFinish.apply(this,arguments);
+      };
+
+      const originalCommit=window.commitFinalSessionSave;
+      window.commitFinalSessionSave=function(){
+        const used=Number(sessionStorage.getItem('tashihq_demo_sessions')||'0');
+        if(used>=DEMO_MAX_SESSIONS){ demoBlocked('Penyimpanan sesi demo'); return false; }
+        const result=originalCommit.apply(this,arguments);
+        // Hanya dihitung bila history benar-benar bertambah.
+        const newCount=Number(sessionStorage.getItem('tashihq_demo_sessions')||'0')+1;
+        sessionStorage.setItem('tashihq_demo_sessions',String(newCount));
+        updateDemoCounter();
+        return result;
+      };
+
+      const originalInteraction=window.handleWordInteraction;
+      if(originalInteraction){
+        window.handleWordInteraction=function(wordEl,surahNo,ayatNo,wordIdx,wordText){
+          const marks=(window.appState&&appState.currentSessionMarks)||[];
+          if(marks.length>=DEMO_MAX_MARKS && !marks.some(m=>m.surahNo===surahNo&&m.ayatNo===ayatNo&&m.wordIdx===wordIdx)){
+            demoBlocked('Penandaan lebih dari '+DEMO_MAX_MARKS+' kesalahan'); return;
+          }
+          return originalInteraction.apply(this,arguments);
+        };
+      }
+
+      // Batasi navigasi surah/ayat ke Al-Fatihah 1–7.
+      const originalStart=window.onSurahStartChange;
+      const originalEnd=window.onSurahEndChange;
+      window.onSurahStartChange=function(v){
+        if(Number(v)!==1){demoBlocked('Akses surah lain'); if(window.appState){appState.currentSurahStart=1;appState.currentSurahEnd=1;} document.getElementById('workflowSurahStartSelect').value='1';document.getElementById('workflowSurahEndSelect').value='1'; if(typeof renderMushafText==='function')renderMushafText(); return false;}
+        return originalStart?originalStart.apply(this,arguments):undefined;
+      };
+      window.onSurahEndChange=function(v){
+        if(Number(v)!==1){demoBlocked('Akses surah lain');document.getElementById('workflowSurahEndSelect').value='1'; if(window.appState)appState.currentSurahEnd=1; if(typeof updateSessionTargetBadge==='function')updateSessionTargetBadge(); if(typeof renderMushafText==='function')renderMushafText(); return false;}
+        return originalEnd?originalEnd.apply(this,arguments):undefined;
+      };
+      const originalAyat=window.onAyatRangeChange;
+      window.onAyatRangeChange=function(){
+        const a1=Math.max(1,Math.min(DEMO_MAX_AYAT,Number(document.getElementById('workflowAyatStartInput')?.value||1)));
+        const a2=Math.max(a1,Math.min(DEMO_MAX_AYAT,Number(document.getElementById('workflowAyatEndInput')?.value||7)));
+        document.getElementById('workflowAyatStartInput').value=a1;document.getElementById('workflowAyatEndInput').value=a2;
+        if(originalAyat) return originalAyat.apply(this,arguments);
+      };
+      window.showAllSurahAyat=function(){
+        if(window.appState){appState.currentSurahStart=1;appState.currentSurahEnd=1;appState.currentAyatStart=1;appState.currentAyatEnd=7;}
+        document.getElementById('workflowSurahStartSelect').value='1';document.getElementById('workflowSurahEndSelect').value='1';document.getElementById('workflowAyatStartInput').value='1';document.getElementById('workflowAyatEndInput').value='7';
+        if(typeof updateSessionTargetBadge==='function')updateSessionTargetBadge(); if(typeof renderMushafText==='function')renderMushafText(); demoToast('Demo hanya menampilkan Al-Fatihah ayat 1–7.');
+      };
+
+      // Fitur produksi yang sengaja dikunci.
+      const blockedFns=['openRaporModal','shareRaporSummaryWA','shareSessionToWhatsApp','openModalTambahSantri','saveNewSantri','openModalEditSantri','saveEditSantri','deleteSantri','exportDataJSON','importDataJSON','openDownloadOfflineModal','confirmClearOfflineCache','openResetSemuaDataModal','executeResetAllData','openModalTargetKurikulum','saveTargetKurikulum'];
+      blockedFns.forEach(name=>{ if(typeof window[name]==='function'){ window[name]=function(){ return demoBlocked(name.replace(/([A-Z])/g,' $1').replace(/^./,x=>x.toUpperCase())); }; }});
+
+      function updateDemoCounter(){
+        const n=Number(sessionStorage.getItem('tashihq_demo_sessions')||'0');
+        const el=document.getElementById('demoSessionCounter'); if(el)el.textContent=n+'/'+DEMO_MAX_SESSIONS;
+      }
+
+      // Jalankan setelah onload bawaan aplikasi selesai.
+      const originalOnload=window.onload;
+      window.onload=function(){
+        if(typeof originalOnload==='function') originalOnload.apply(this,arguments);
+        setTimeout(()=>{
+          addDemoUI();
+          // Paksa target demo setelah seluruh UI asli selesai dibuat.
+          if(window.appState){
+            appState.currentSurahStart=1; appState.currentSurahEnd=1; appState.currentAyatStart=1; appState.currentAyatEnd=7;
+            if(typeof updateSessionTargetBadge==='function')updateSessionTargetBadge();
+            if(typeof renderMushafText==='function')renderMushafText();
+          }
+          // Label counter tambahan di banner.
+          const banner=document.querySelector('#salesDemoBanner .demo-inner');
+          if(banner && !document.getElementById('demoSessionCounter')){
+            const c=document.createElement('span');c.id='demoSessionCounter';c.style='background:#451a03;color:#fde68a;border:1px solid #b45309;border-radius:8px;padding:4px 7px;font-weight:900';c.textContent='0/3 sesi';banner.insertBefore(c,banner.lastElementChild);
+          }
+          lockButtonsByText();updateDemoCounter();
+        },350);
+      };
+    })();
+
   </script>
+
+<style>
+#demoProBuyBtn {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 99999;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg,#0f766e,#16a34a);
+  color: #fff !important;
+  text-decoration: none !important;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.22);
+  border: 2px solid rgba(255,255,255,.75);
+}
+#demoProBuyBtn:hover { transform: translateY(-1px); }
+@media (max-width:600px) {
+  #demoProBuyBtn { right: 12px; bottom: 12px; left: 12px; justify-content:center; }
+}
+</style>
+<a id="demoProBuyBtn" href="http://lynk.id/arwayain/p4ewylkqynxy/checkout" target="_blank" rel="noopener noreferrer">
+  🛒 Beli Versi PRO
+</a>
+
 </body>
 </html>
